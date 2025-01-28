@@ -40,8 +40,21 @@ async function run() {
 
 
     // -----------All JObs
+    // app.get('/jobs', async(req,res)=> {
+    //     const cursor = jobsCollection.find();
+    //     const result = await cursor.toArray();
+    //     res.send(result);
+    // })
+
+    // verify email jobs card 
     app.get('/jobs', async(req,res)=> {
-        const cursor = jobsCollection.find();
+
+      const email = req.query.email;
+      let query={};
+      if(email){
+        query= {hr_email:email}
+      }
+        const cursor = jobsCollection.find(query);
         const result = await cursor.toArray();
         res.send(result);
     })
@@ -79,7 +92,40 @@ async function run() {
     app.post('/job_applications',async(req,res) => {
       const application = req.body;
       const result = await jobApplicationCollection.insertOne(application);
+
+
+      // id milaye koto jon job e apply korlo seta kivabe ber korte hoi nomuna: not main code 
+      const id = application.job_id;
+      const query = {_id : new ObjectId(id)}
+      const job  = await jobsCollection.findOne(query)
+
+      let newCount = 0;
+      if(job.applicationCount){
+        newCount = job.applicationCount + 1;
+      }else{
+        newCount = 1 ;
+      }
+
+      // 
+      // now update the jobInfo:
+      const filter  = {_id : new ObjectId(id)}
+      const updatedDoc = {
+        $set:{ 
+          applicationCount : newCount
+        }
+      }
+
+      const updatedResult =  await jobsCollection.updateOne(filter,updatedDoc)
+      // end
+
+
       res.send(result);
+    })
+
+    app.post('/jobs',async(req,res) => {
+      const newJob  = req.body ;
+      const result = await jobsCollection.insertOne(newJob);
+      res.send(result)
     })
 
 
